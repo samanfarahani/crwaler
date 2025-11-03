@@ -1,0 +1,9 @@
+body{font-family: Tahoma, Arial, sans-serif;background:#f4f6f9;margin:0;padding:20px;color:#1f2937;}
+.card{max-width:980px;margin:40px auto;padding:28px;background:#fff;border-radius:12px;box-shadow:0 6px 22px rgba(16,24,40,.08)}
+h1{margin:0 0 18px 0}
+input[type=url], input[type=number]{width:100%;padding:10px;margin:8px 0 16px;border-radius:8px;border:1px solid #e6e9ee}
+.buttons{display:flex;gap:10px}
+button{padding:10px 18px;border-radius:10px;border:none;background:#0b74de;color:#fff;cursor:pointer}
+.products{width:100%;border-collapse:collapse;margin-top:18px}
+.products th,.products td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+.hint{color:#6b7280;font-size:13px;margin-top:12px}

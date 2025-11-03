@@ -1,0 +1,28 @@
+<table border="1" cellspacing="0" cellpadding="5">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Variation</th>
+            <th>SKU</th>
+            <th>Description</th>
+            <th>Price</th>
+            <th>Categories</th>
+            <th>GroupedProducts</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in products %}
+        <tr>
+            <td>{{ product.name }}</td>
+            <td>{{ product.type }}</td>
+            <td>{{ product.variation }}</td>
+            <td>{{ product.sku }}</td>
+            <td>{{ product.description }}</td>
+            <td>{{ product.price }}</td>
+            <td>{{ product.categories|join:", " }}</td>
+            <td>{{ product.groupedProducts|join:", " }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

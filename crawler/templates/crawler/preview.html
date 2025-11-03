@@ -1,0 +1,65 @@
+<!-- templates/crawler/preview.html -->
+<!doctype html>
+<html lang="fa">
+<head>
+<meta charset="utf-8">
+<title>Preview {{ job.job_id }}</title>
+<link rel="stylesheet" href="{% static 'crawler/styles.css' %}">
+</head>
+<body>
+  <h2>پیش‌نمایش نتایج — job: {{ job.job_id }}</h2>
+  <p>تعداد کل: {{ job.results|length }}</p>
+
+  <table border="1" cellpadding="6" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Name</th><th>type</th><th>variation</th><th>sku</th><th>price</th><th>categories</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in job.results %}
+      <tr>
+        <td>{{ r.Name }}</td>
+        <td>{{ r.type }}</td>
+        <td>{{ r.variation }}</td>
+        <td>{{ r.sku }}</td>
+        <td>{{ r.price }}</td>
+        <td>
+          {% if r.categories %}
+            {{ r.categories|join:", " }}
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p>
+    <a href="{% url 'download_xlsx' job.job_id %}">دانلود اکسل</a>
+  </p>
+
+  <h3>ارسال به ایمیل</h3>
+  <form id="email-form">
+    <input type="email" id="email" placeholder="example@example.com" required>
+    <button type="submit">ارسال</button>
+  </form>
+  <div id="email-status"></div>
+
+<script>
+document.getElementById("email-form").addEventListener("submit", async function(e){
+  e.preventDefault();
+  const email = document.getElementById("email").value;
+  const form = new FormData();
+  form.append("job_id", "{{ job.job_id }}");
+  form.append("email", email);
+  const res = await fetch("{% url 'send_email_with_job' %}", {method: "POST", body: form});
+  const js = await res.json();
+  if(js.ok){
+    document.getElementById("email-status").innerText = "ایمیل ارسال شد.";
+  } else {
+    document.getElementById("email-status").innerText = "خطا: " + (js.error || "نامعلوم");
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Starter - Crawler</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+<div class="max-w-3xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-4">Crawler - استخراج محصولات</h1>
+
+  <form id="crawl-form" class="bg-white p-4 rounded shadow">
+    {% csrf_token %}
+    <label class="block mb-1 font-medium">آدرس شروع (مثلاً https://digizima19.com)</label>
+    <input name="url" id="url" class="w-full border p-2 rounded" placeholder="https://vape60shop22.com">
+
+    <div class="grid grid-cols-2 gap-2 mt-3">
+      <div>
+        <label class="block text-sm">حداکثر محصولات</label>
+        <input name="max_products" id="max_products" type="number" value="10" class="w-full border p-2 rounded">
+      </div>
+      <div>
+        <label class="block text-sm">استخراج همه</label>
+        <input type="checkbox" name="all_products" id="all_products" class="mt-2">
+      </div>
+    </div>
+
+    <div class="mt-4 flex gap-2">
+      <button id="start-btn" type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">شروع</button>
+      <button id="preview-btn" type="button" class="bg-gray-300 px-4 py-2 rounded" onclick="openPreview()">لیست پیش‌فرض</button>
+    </div>
+  </form>
+
+  <div id="status" class="mt-4"></div>
+  <div id="actions" class="mt-4"></div>
+</div>
+
+<script>
+async function startCrawl(e){
+  e.preventDefault();
+  const btn = document.getElementById("start-btn");
+  btn.disabled = true;
+  btn.innerText = "در حال اجرا...";
+  document.getElementById("status").innerText = "";
+
+  const fd = new FormData();
+  fd.append("url", document.getElementById("url").value);
+  fd.append("max_products", document.getElementById("max_products").value);
+  fd.append("all_products", document.getElementById("all_products").checked ? "true" : "false");
+
+  try {
+    const resp = await fetch("{% url 'crawler:start_crawl' %}", {method:"POST", body: fd});
+    const data = await resp.json();
+    if (data.error) {
+      document.getElementById("status").innerText = "خطا: " + data.error;
+      btn.disabled = false;
+      btn.innerText = "شروع";
+      return;
+    }
+    const job_id = data.job_id;
+    document.getElementById("status").innerHTML = "Job created: " + job_id + " — در حال اجرا...";
+    pollStatus(job_id);
+  } catch (err) {
+    document.getElementById("status").innerText = "خطا در ارسال درخواست: " + err;
+    btn.disabled = false;
+    btn.innerText = "شروع";
+  }
+}
+
+async function pollStatus(job_id){
+  const statusEl = document.getElementById("status");
+  const actionsEl = document.getElementById("actions");
+  let finished = false;
+  while(!finished){
+    try {
+      const r = await fetch(`/crawler/job_status/${job_id}/`);
+      const j = await r.json();
+      statusEl.innerText = "وضعیت: " + j.status + (j.count ? (" — محصولات: " + j.count) : "");
+      if (j.status === "finished") {
+        finished = true;
+        actionsEl.innerHTML = `<a class="bg-green-500 text-white px-4 py-2 rounded" href="/crawler/preview/${job_id}/">پیش‌نمایش</a>
+          <a class="bg-blue-500 text-white px-4 py-2 rounded ml-2" href="/crawler/download/${job_id}/json/">دانلود JSON</a>
+          <a class="bg-indigo-600 text-white px-4 py-2 rounded ml-2" href="/crawler/download/${job_id}/excel/">دانلود Excel</a>`;
+        document.getElementById("start-btn").disabled = false;
+        document.getElementById("start-btn").innerText = "شروع";
+        break;
+      } else if (j.status === "failed") {
+        finished = true;
+        statusEl.innerText = "Failed: " + (j.error || "unknown");
+        document.getElementById("start-btn").disabled = false;
+        document.getElementById("start-btn").innerText = "شروع";
+        break;
+      } else {
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    } catch (err) {
+      statusEl.innerText = "خطا در دریافت وضعیت: " + err;
+      document.getElementById("start-btn").disabled = false;
+      document.getElementById("start-btn").innerText = "شروع";
+      break;
+    }
+  }
+}
+
+document.getElementById("crawl-form").addEventListener("submit", startCrawl);
+
+function openPreview(){
+  // placeholder
+  alert("وقتی Crawl تمام شد، روی 'پیش‌نمایش' کلیک کنید.");
+}
+</script>
+</body>
+</html>

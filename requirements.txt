@@ -1,0 +1,8 @@
+﻿Django>=4.0
+selenium>=4.15
+beautifulsoup4>=4.12
+pandas>=2.0
+openpyxl>=3.1
+requests>=2.31
+lxml>=4.9
+urllib3>=2.0
