@@ -6,7 +6,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('crawler.urls')),  # اطمینان از این خط
+    path('', include('crawler.urls')),
 ]
 
 if settings.DEBUG:

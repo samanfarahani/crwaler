@@ -9,101 +9,101 @@ import pandas as pd
 from uuid import uuid4
 
 def index(request):
-    """صفحه اصلی"""
+    """Home"""
     return render(request, 'crawler/index.html')
 
 @csrf_exempt
 def start_scraping(request):
-    """شروع اسکرپینگ برای چندین سایت"""
+    """Start scraping for multiple sites"""
     if request.method == 'POST':
         try:
-            # دریافت داده‌های JSON از درخواست
+            # Get JSON data from the request
             data = json.loads(request.body)
             sites = data.get('sites', [])
             
             if not sites:
-                return JsonResponse({'success': False, 'error': 'سایتی مشخص نشده'})
+                return JsonResponse({'success': False, 'error': 'Site not specified'})
             
-            print(f"🔧 شروع اسکرپ برای {len(sites)} سایت: {sites}")
+            print(f"🔧 Start scraping for{len(sites)} Site: {sites}")
             
-            # ایجاد اسکرپر جدید
+            # Create a new scraper
             scraper = AdvancedVapeScraper()
             
-            # اجرا در تابع جداگانه
+            # Run in a separate function
             def run_scraping():
                 try:
-                    # استفاده از تابع جدید برای اسکرپ چندسایتی
+                    # Use the new function for multisite scraping
                     result = scraper.scrape_multiple_sites(sites)
                     scraper.close()
-                    print(f"✅ نتیجه اسکرپ: {result}")
+                    print(f"✅ Scrape result: {result}")
                 except Exception as e:
-                    print(f"❌ خطا در اسکرپ: {e}")
+                    print(f"❌ Error in scrape: {e}")
             
-            # اجرا در thread جدید
+            # Run in a new thread
             thread = threading.Thread(target=run_scraping)
             thread.daemon = True
             thread.start()
             
-            # فوراً پاسخ بده
+            # Reply immediately
             return JsonResponse({
                 'success': True, 
-                'message': f'اسکرپ برای {len(sites)} سایت شروع شد',
+                'message': f'Scrap for{len(sites)} The site has started',
                 'job_id': scraper.job_id,
                 'sites_count': len(sites)
             })
             
         except Exception as e:
-            print(f"❌ خطا در شروع اسکرپ: {e}")
+            print(f"❌Error starting scrape: {e}")
             return JsonResponse({'success': False, 'error': str(e)})
     
-    return JsonResponse({'success': False, 'error': 'متد غیرمجاز'})
+    return JsonResponse({'success': False, 'error': 'Invalid method'})
 
 @csrf_exempt
 def start_scraping_all(request):
-    """شروع اسکرپینگ برای تمام 7 سایت به طور خودکار"""
+    """Start scraping for all 7 sites automatically"""
     if request.method == 'POST':
         try:
-            print("🔧 شروع اسکرپ خودکار برای تمام 7 سایت")
+            print("🔧 Start automatic scraping for all 7 sites")
             
-            # ایجاد اسکرپر جدید
+            #Create a new scraper
             scraper = AdvancedVapeScraper()
             
-            # اجرا در تابع جداگانه
+            # Create a new scraper
             def run_scraping():
                 try:
-                    # استفاده از تابع جدید برای اسکرپ تمام سایت‌ها
+                    # Using the new function to scrape entire sites
                     result = scraper.scrape_all_sites()
                     scraper.close()
-                    print(f"✅ نتیجه اسکرپ: {result}")
+                    print(f"✅ Scrape result: {result}")
                 except Exception as e:
-                    print(f"❌ خطا در اسکرپ: {e}")
+                    print(f"❌ Error in scrape: {e}")
             
-            # اجرا در thread جدید
+            # Run in a new thread
             thread = threading.Thread(target=run_scraping)
             thread.daemon = True
             thread.start()
             
-            # فوراً پاسخ بده
+            # Reply immediately
             return JsonResponse({
                 'success': True, 
-                'message': 'اسکرپ خودکار برای 7 سایت شروع شد',
+                'message': 'Automatic scraping started for 7 sites',
                 'job_id': scraper.job_id,
                 'sites_count': 7
             })
             
         except Exception as e:
-            print(f"❌ خطا در شروع اسکرپ: {e}")
+            print(f"❌Error starting scrape: {e}")
             return JsonResponse({'success': False, 'error': str(e)})
     
-    return JsonResponse({'success': False, 'error': 'متد غیرمجاز'})
+    return JsonResponse({'success': False, 'error': 'Invalid method'})
 
 def get_progress(request):
-    """دریافت وضعیت پیشرفت"""
+    """Get progress status"""
     try:
-        # پیدا کردن آخرین فایل وضعیت
+        # Find the latest status file
         if not os.path.exists('tmp_jobs'):
             return JsonResponse({
-                'status': 'آماده',
+                'status': 'ready',
                 'page': 0,
                 'total_pages': 0,
                 'products_count': 0,
@@ -113,14 +113,14 @@ def get_progress(request):
             
         status_files = [f for f in os.listdir('tmp_jobs') if f.endswith('_status.json')]
         if status_files:
-            # پیدا کردن جدیدترین فایل
+            #Find the newest file
             latest_file = max(status_files, key=lambda f: os.path.getctime(os.path.join('tmp_jobs', f)))
             with open(f'tmp_jobs/{latest_file}', 'r', encoding='utf-8') as f:
                 status_data = json.load(f)
                 return JsonResponse(status_data)
         
         return JsonResponse({
-            'status': 'در حال آماده سازی...',
+            'status': 'Preparing...',
             'page': 0,
             'total_pages': 0,
             'products_count': 0,
@@ -130,26 +130,26 @@ def get_progress(request):
         
     except Exception as e:
         return JsonResponse({
-            'status': f'خطا: {str(e)}',
+            'status': f'error: {str(e)}',
             'products_count': 0,
             'total_products': 0,
             'current_site': ''
         })
 
 def preview_products(request, job_id):
-    """پیش‌نمایش محصولات"""
+    """Product Preview"""
     try:
         json_file = f'tmp_jobs/{job_id}.json'
         if os.path.exists(json_file):
             with open(json_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
-            products = data.get('products', [])[:20]  # فقط 20 محصول اول
+            products = data.get('products', [])[:20]  # Only the first 20 products
             
-            # گروه‌بندی محصولات بر اساس سایت
+            #Grouping products by site
             products_by_site = {}
             for product in products:
-                site = product.get('site', 'نامشخص')
+                site = product.get('site', 'uncertain')
                 if site not in products_by_site:
                     products_by_site[site] = []
                 products_by_site[site].append(product)
@@ -163,7 +163,7 @@ def preview_products(request, job_id):
             })
         else:
             return render(request, 'crawler/preview.html', {
-                'error': 'داده‌ای یافت نشد',
+                'error': 'No data found',
                 'products': [],
                 'products_by_site': {},
                 'total_products': 0,
@@ -179,11 +179,11 @@ def preview_products(request, job_id):
         })
 
 def download_excel(request, job_id):
-    """دانلود فایل اکسل"""
+    """Download Excel File"""
     try:
         excel_file = f'tmp_jobs/{job_id}.xlsx'
         if os.path.exists(excel_file):
-            # خواندن فایل اکسل و ارسال برای دانلود
+            # Read Excel file and send for download
             with open(excel_file, 'rb') as f:
                 response = HttpResponse(
                     f.read(),
@@ -192,15 +192,15 @@ def download_excel(request, job_id):
                 response['Content-Disposition'] = f'attachment; filename="products_{job_id}.xlsx"'
                 return response
         else:
-            return JsonResponse({'success': False, 'error': 'فایل یافت نشد'}, status=404)
+            return JsonResponse({'success': False, 'error': 'File not found'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 def test_view(request):
-    """صفحه تست برای بررسی سلامت سرور"""
+    """Test page to check server health"""
     return JsonResponse({
         'status': 'OK', 
-        'message': 'سرور کار می‌کند',
+        'message': 'The server is working',
         'endpoints': {
             'home': '/',
             'test': '/test/',
@@ -224,7 +224,7 @@ def test_view(request):
     })
 
 def get_job_status(request, job_id):
-    """دریافت وضعیت یک Job خاص"""
+    """Get the status of a specific job"""
     try:
         status_file = f'tmp_jobs/{job_id}_status.json'
         if os.path.exists(status_file):
@@ -234,7 +234,7 @@ def get_job_status(request, job_id):
         else:
             return JsonResponse({
                 'success': False,
-                'error': 'Job یافت نشد',
+                'error': 'Job not found',
                 'job_id': job_id
             }, status=404)
     except Exception as e:
@@ -245,7 +245,7 @@ def get_job_status(request, job_id):
         }, status=500)
 
 def list_jobs(request):
-    """لیست تمام Jobهای موجود"""
+    """List of all available jobs"""
     try:
         if not os.path.exists('tmp_jobs'):
             return JsonResponse({'jobs': []})
@@ -258,29 +258,29 @@ def list_jobs(request):
                     with open(f'tmp_jobs/{filename}', 'r', encoding='utf-8') as f:
                         status_data = json.load(f)
                         
-                        # محاسبه تعداد سایت‌های اسکرپ شده
+                        # Calculate the number of scraped sites
                         sites_count = 0
                         json_file = f'tmp_jobs/{job_id}.json'
                         if os.path.exists(json_file):
                             with open(json_file, 'r', encoding='utf-8') as f2:
                                 json_data = json.load(f2)
                                 products = json_data.get('products', [])
-                                # تعداد سایت‌های منحصر به فرد
+                                # Number of unique sites
                                 sites_count = len(set(p.get('site', '') for p in products if p.get('site')))
                         
                         jobs.append({
                             'job_id': job_id,
-                            'status': status_data.get('status', 'نامشخص'),
+                            'status': status_data.get('status', 'uncertain'),
                             'products_count': status_data.get('total_products', 0),
                             'sites_count': sites_count,
                             'current_site': status_data.get('current_site', ''),
                             'timestamp': status_data.get('timestamp', '')
                         })
                 except Exception as e:
-                    print(f"خطا در پردازش فایل {filename}: {e}")
+                    print(f"Error processing the file{filename}: {e}")
                     continue
         
-        # مرتب‌سازی بر اساس زمان (جدیدترین اول)
+        # Sort by time (newest first)
         jobs.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
         
         return JsonResponse({'jobs': jobs})
@@ -288,7 +288,7 @@ def list_jobs(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 def get_site_statistics(request, job_id):
-    """آمار محصولات بر اساس سایت"""
+    """Product statistics by site"""
     try:
         json_file = f'tmp_jobs/{job_id}.json'
         if os.path.exists(json_file):
@@ -297,10 +297,10 @@ def get_site_statistics(request, job_id):
             
             products = data.get('products', [])
             
-            # آمار بر اساس سایت
+            # Statistics by site
             site_stats = {}
             for product in products:
-                site = product.get('site', 'نامشخص')
+                site = product.get('site', 'uncertain')
                 if site not in site_stats:
                     site_stats[site] = {
                         'count': 0,
@@ -311,7 +311,7 @@ def get_site_statistics(request, job_id):
                 
                 site_stats[site]['count'] += 1
                 
-                # محاسبه قیمت
+                # Price calculation
                 try:
                     price = int(product.get('price', 0))
                     site_stats[site]['total_price'] += price
@@ -320,14 +320,14 @@ def get_site_statistics(request, job_id):
                 except:
                     pass
             
-            # محاسبه میانگین
+            # Calculate the average
             for site in site_stats:
                 if site_stats[site]['count'] > 0:
                     site_stats[site]['avg_price'] = site_stats[site]['total_price'] // site_stats[site]['count']
                 else:
                     site_stats[site]['avg_price'] = 0
                 
-                # تمیز کردن مقادیر بی‌نهایت
+                # Clean up infinite values
                 if site_stats[site]['min_price'] == float('inf'):
                     site_stats[site]['min_price'] = 0
             
@@ -341,7 +341,7 @@ def get_site_statistics(request, job_id):
         else:
             return JsonResponse({
                 'success': False,
-                'error': 'فایل Job یافت نشد'
+                'error': 'Job file not found'
             }, status=404)
             
     except Exception as e:
@@ -352,17 +352,17 @@ def get_site_statistics(request, job_id):
 
 @csrf_exempt
 def stop_scraping(request, job_id):
-    """توقف یک Job در حال اجرا"""
+    """Stopping a Running Job"""
     if request.method == 'POST':
         try:
-            # اینجا باید مکانیزمی برای توقف اسکرپر ایجاد کنید
-            # در حال حاضر، فقط وضعیت را آپدیت می‌کنیم
+            # Here you need to create a mechanism to stop the scraper
+            # For now, we're just updating the status
             status_file = f'tmp_jobs/{job_id}_status.json'
             if os.path.exists(status_file):
                 with open(status_file, 'r', encoding='utf-8') as f:
                     status_data = json.load(f)
                 
-                status_data['status'] = 'متوقف شده توسط کاربر'
+                status_data['status'] = 'Stopped by user'
                 status_data['stopped'] = True
                 
                 with open(status_file, 'w', encoding='utf-8') as f:
@@ -370,7 +370,7 @@ def stop_scraping(request, job_id):
             
             return JsonResponse({
                 'success': True,
-                'message': 'درخواست توقف ارسال شد',
+                'message': 'Stop request sent',
                 'job_id': job_id
             })
             
@@ -380,10 +380,10 @@ def stop_scraping(request, job_id):
                 'error': str(e)
             }, status=500)
     
-    return JsonResponse({'success': False, 'error': 'متد غیرمجاز'})
+    return JsonResponse({'success': False, 'error': 'Invalid method'})
 
 def get_supported_sites(request):
-    """دریافت لیست سایت‌های پشتیبانی شده"""
+    """Get list of supported sites"""
     supported_sites = [
         {
             'name': 'Vape 60 Shop',
